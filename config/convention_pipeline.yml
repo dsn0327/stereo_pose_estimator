@@ -1,0 +1,31 @@
+# conventional pipeline
+save_dir: workspace/convention
+model:
+  arch:
+    name: ConventionalPipeline
+    detector:
+      name: ContoursDetector
+      thresh: 0
+      gauss_sigma: 0.0
+      min_blob_area: 0
+      max_blob_area: 0
+      show_results: True
+    matcher:
+      name: None
+    triangulation:
+      name: None
+data:
+  train:
+    name: None
+  val:
+    name: TCL_XR_Dataset
+    img_path: tcl_xr/val
+    ann_path: tcl_xr/annotations/val.json
+    input_size: [2560, 800] # Note: [width, height] format
+    keep_ratio: False
+device:
+  name: None
+schedule:
+  name: None
+log:
+  interval: 0

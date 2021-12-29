@@ -2,10 +2,10 @@ import argparse
 import os
 
 import cv2
+# from src.detector import Detector
+# from src.util import cfg, load_config
 # from util import cfg, load_config
 # from util.path import mkdir
-
-image_ext = [".jpg", ".jpeg", ".webp", ".bmp", ".png"]
 
 
 def parse_args():
@@ -21,39 +21,42 @@ def parse_args():
     return args
 
 
-def get_image_list(path):
-    image_names = {"dir": None, "fid": [], "ext": None}
-    for maindir, subdir, file_name_list in os.walk(path):
-        for filename in file_name_list:
-            apath = os.path.join(maindir, filename)
-            dir, file = os.path.split(apath)
-            fid = int(file.split('_')[0])
-            ext = os.path.splitext(file)[1]
-            if image_names["dir"] is None:
-                image_names["dir"] = dir
-            if fid not in image_names["fid"]:
-                image_names["fid"].append(fid)
-            if image_names["ext"] is None:
-                image_names["ext"] = ext
-    image_names["fid"].sort()
-    return image_names
+def get_image_files(path):
+    image_files = {"dir": None, "fid": [], "ext": None}
+    for dirpath, dirnames, filenames in os.walk(path):
+        for filename in filenames:
+            fid = int(os.path.splitext(filename)[0])
+            ext = os.path.splitext(filename)[1]
+            if image_files["dir"] is None:
+                image_files["dir"] = dirpath
+            if fid not in image_files["fid"]:
+                image_files["fid"].append(fid)
+            if image_files["ext"] is None:
+                image_files["ext"] = ext
+    image_files["fid"].sort()
+    return image_files
 
 
 def main():
     args = parse_args()
 
+    load_config(cfg, args.config)
+    detector = Detector(cfg)
+
     if os.path.isdir(args.path):
-        files = get_image_list(args.path)
+        image_files = get_image_files(args.path)
     else:
         RuntimeError("{} is not a valid dir path".format(args.path))
 
-    for fid in files["fid"]:
-        imgl_file = files["dir"] + "/" + str(fid) + "_l" + files["ext"]
-        imgr_file = files["dir"] + "/" + str(fid) + "_r" + files["ext"]
-        imgl = cv2.imread(imgl_file, 0)
-        imgr = cv2.imread(imgr_file, 0)
-        cv2.imshow("imgl", imgl)
-        cv2.imshow("imgr", imgr)
+    for fid in image_files["fid"]:
+        filename = os.path.join(image_files["dir"], str(fid)+image_files["ext"])
+        # Note: load image as 8-bit grayscale here
+        img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+        # img = cv2.imread(filename, cv2.IMREAD_ANYDEPTH)
+
+        detector.inference(img)
+
+        cv2.imshow("img raw", img)
         ch = cv2.waitKey(0)
         if ch == 27 or ch == ord("q") or ch == ord("Q"):
             break
