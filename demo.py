@@ -1,17 +1,17 @@
 import argparse
 import os
 
+import torch
+
 import cv2
-# from src.detector import Detector
-# from src.util import cfg, load_config
-# from util import cfg, load_config
-# from util.path import mkdir
+
+from src.model.arch import build_model
+from src.util import cfg, load_config
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", help="model config file path")
-    parser.add_argument("--path", default="./data", help="path to images")
     parser.add_argument(
         "--save_result",
         action="store_true",
@@ -41,25 +41,36 @@ def main():
     args = parse_args()
 
     load_config(cfg, args.config)
-    detector = Detector(cfg)
+    model = build_model(cfg.model)
 
-    if os.path.isdir(args.path):
-        image_files = get_image_files(args.path)
+    data_path = os.path.join("./data", cfg.data.val.img_path)
+    if os.path.isdir(data_path):
+        image_files = get_image_files(data_path)
     else:
-        RuntimeError("{} is not a valid dir path".format(args.path))
+        RuntimeError("{} is not a valid dir path".format(data_path))
 
-    for fid in image_files["fid"]:
+    i = 0
+    N = len(image_files["fid"])
+    while i in range(0, N):
+        fid = image_files["fid"][i]
         filename = os.path.join(image_files["dir"], str(fid)+image_files["ext"])
         # Note: load image as 8-bit grayscale here
         img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
         # img = cv2.imread(filename, cv2.IMREAD_ANYDEPTH)
+        meta = {"img": img, "roi": None}
 
-        detector.inference(img)
+        with torch.no_grad():
+            model.inference(meta)
 
-        cv2.imshow("img raw", img)
+        cv2.imshow("imgl_detect", meta["imgl_detect"])
+        cv2.imshow("imgr_detect", meta["imgr_detect"])
         ch = cv2.waitKey(0)
         if ch == 27 or ch == ord("q") or ch == ord("Q"):
             break
+        elif ch == ord("a") or ch == ord("A"):
+            i = max(0, i-1)
+        elif ch == ord("d") or ch == ord("D"):
+            i = min(N-1, i+1)
 
 
 if __name__ == "__main__":

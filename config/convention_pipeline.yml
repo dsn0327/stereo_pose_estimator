@@ -5,10 +5,12 @@ model:
     name: ConventionalPipeline
     detector:
       name: ContoursDetector
-      thresh: 0
-      gauss_sigma: 0.0
-      min_blob_area: 0
-      max_blob_area: 0
+      thresh: 180
+      gauss_sigma: 0.6
+      min_blob_area: 15
+      max_blob_area: 600
+      ratio_circularity: 0.3
+      ratio_solidity: 0.7
       show_results: True
     matcher:
       name: None
